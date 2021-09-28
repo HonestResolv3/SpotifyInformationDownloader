@@ -58,24 +58,40 @@ def writeSongContents(content, isAlbum):
             file = open(os.path.join(trackPath, f"{content['name']}.txt"), 'w')
         else:
             file = open(os.path.join(albumPath, f"{content['name']}.txt"), 'w')
+
         file.write(f"Name: {content['name']}\n\n")
         file.write(f"Popularity: {content['popularity']}\n\n")
+        file.write(f"Artists:\n")
 
+        for value in content['artists']:
+            file.write(f"- {value['name']}\n")
+        file.write("\n")
+    
         if isAlbum:
             file.write(f"Release Date: {content['release_date']}\n\n")
             file.write(f"Album Type: {content['album_type']}\n\n")
             file.write(f"Is Explicit: {content['tracks']['items'][0]['explicit']}\n\n")
+            file.write(f"Total Tracks: {content['total_tracks']}\n\n")
 
         file.write(f"Type: {content['type']}\n\n")
         file.write(f"ID: {content['id']}\n\n")
-        file.write(f"Artwork URL: {content['images'][0]['url']}\n\n")
+        file.write(f"Spotify URL: {content['external_urls']['spotify']}\n\n")
+        file.write(f"Spotify API URL: {content['href']}\n\n")
+
+        if not isAlbum:
+            file.write(f"Artwork URL: {content['album']['images'][0]['url']}\n\n")
+        else:
+            file.write(f"Artwork URL: {content['images'][0]['url']}\n\n")
 
         if not isAlbum:
             file.write(f"Preview URL: {content['preview_url']}\n\n")
-        else:
-            file.write(f"Album URI: {content['uri']}\n\n")
-            file.write(f"Copyright (C): {content['copyrights'][0]['text']}\n\n")
-            file.write(f"Copyright (P): {content['copyrights'][1]['text']}\n\n")
+        
+        file.write(f"Content URI: {content['uri']}\n\n")
+        
+        if isAlbum:
+            file.write(f"Label: {content['label']}\n\n")
+            file.write(f"Copyright (C): {content['copyrights'][0]['text'][2:]}\n\n")
+            file.write(f"Copyright (P): {content['copyrights'][1]['text'][2:]}\n\n")
 
         file.write(f"Available Markets (ISO 3166-1 alpha-2 Code): {content['available_markets']}\n\n")
         file.close()
@@ -124,8 +140,8 @@ def main():
             input("\nPress any key to quit")
             quit()
     
-        pprint.pprint(track)
-        # writeSongContents(track, False) - Temporary (researching the properties of a Track object)
+        # pprint.pprint(track) - Debug purposes
+        writeSongContents(track, False)
     elif choice == "album":
         url = checkInput(choice)
 
@@ -138,6 +154,7 @@ def main():
             input("\nPress any key to quit")
             quit()
     
+        # pprint.pprint(album) - Debug purposes
         writeSongContents(album, True)
 
         print(f"\nFinished writing all the album's information")
@@ -201,5 +218,4 @@ except Exception as e:
 
 print("Login to your Spotify profile when using this application. (Spotify's API does not allow un-authorized requests)")
 while not choice.lower() == "quit":
-    print(choice)
     main()
