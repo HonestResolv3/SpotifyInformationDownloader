@@ -12,7 +12,7 @@ import pprint
 dirPath = os.getcwd()
 exportPath = os.path.join(dirPath, "Exports")
 folderCache = [ "Exports", ".cache" ]
-folders = [ "Artists", "Users", "Albums", "Tracks", "Media", "Media\Song Previews", "Media\Pictures" ]
+folders = [ "Artists", "Users", "Albums", "Tracks", "Media", "Media\Pictures", "Media\Song Previews" ]
 directories = []
 sp = spotipy.Spotify(auth_manager=SpotifyPKCE(client_id="72f54fa540c743268595191fc3a153d0", redirect_uri="http://localhost:5000/callback"))
 choice = ""
@@ -23,7 +23,7 @@ choice = ""
 def writeProfileContents(account, isArtist):
     try:
         information = ""
-
+        
         # Artists have a 'name' and 'popularity' field inside the response object
         # Versus users that just have 'display_name'
         if isArtist:
@@ -31,10 +31,16 @@ def writeProfileContents(account, isArtist):
             file = open(os.path.join(directories[2], f"{account['name']}.txt"), 'w')
             information += f"Name: {account['name']}\n\n"
             information += f"Popularity: {account['popularity']}\n\n"
+            print(f"Downloading Profile Picture URL")
+            wget.download(account['images'][0]['url'], os.path.join(directories[7], f"{account['name']}_Avatar.png"))
+            print("\n")
         else:
             print(f"Writing contents for {account['display_name']}\n")
             file = open(os.path.join(directories[3], f"{account['display_name']}.txt"), 'w')
             information += f"Display Name: {account['display_name']}\n\n"
+            print(f"Downloading Profile Picture URL")
+            wget.download(account['images'][0]['url'], os.path.join(directories[7], f"{account['display_name']}_User__Avatar.png"))
+            print("\n")
         
         information += f"Followers: {account['followers']['total']}\n\n"
         information += f"Type: {account['type']}\n\n"
@@ -42,10 +48,9 @@ def writeProfileContents(account, isArtist):
         information += f"Avatar URL: {account['images'][0]['url']}\n\n"
         information += f"Profile URL: {account['external_urls']['spotify']}\n\n"
         information += f"Profile URI: {account['uri']}\n\n"
-
         file.write(information)
         file.close()
-        print("Finished downloading the requested contents!\n")
+        print("Finished downloading the requested contents!")
     except Exception as e:
         print(f"There was an error trying to write the requested contents\nError: {e}")
         input("\nPress any key to quit")
@@ -56,14 +61,8 @@ def writeProfileContents(account, isArtist):
 # A method to write track and album information depending on what is passed in
 def writeAndDownloadSongContents(content, isAlbum):
     try:
-        information = ""
         print(f"Downloading contents for {content['name']}\n")
-        if not isAlbum:
-            file = open(os.path.join(directories[5], f"{content['name']}.txt"), 'w')
-        else:
-            file = open(os.path.join(directories[4], f"{content['name']}.txt"), 'w')
-
-        information += f"Name: {content['name']}\n\n"
+        information = f"Name: {content['name']}\n\n"
         information += f"Popularity: {content['popularity']}\n\n"
         information += f"Artists:\n"
         for value in content['artists']:
@@ -71,10 +70,11 @@ def writeAndDownloadSongContents(content, isAlbum):
         information += "\n"
         information += f"Type: {content['type']}\n\n"
         information += f"ID: {content['id']}\n\n"
+        information += f"Content URI: {content['uri']}\n\n"
         information += f"Spotify URL: {content['external_urls']['spotify']}\n\n"
         information += f"Spotify API URL: {content['href']}\n\n"
 
-        # Albums have all this information in the response object versus a track
+        # Albums have all this information attached to it versus a sole track
         if isAlbum:
             information += f"Artwork URL: {content['images'][0]['url']}\n\n"
             information += f"Release Date: {content['release_date']}\n\n"
@@ -84,17 +84,24 @@ def writeAndDownloadSongContents(content, isAlbum):
             information += f"Label: {content['label']}\n\n"
             information += f"Copyright (C): {content['copyrights'][0]['text']}\n\n"
             information += f"Copyright (P): {content['copyrights'][1]['text']}\n\n"
+            print(f"Downloading Artwork for {content['name']}")
+            wget.download(content['images'][0]['url'], os.path.join(directories[7], f"{content['name']}_Album.png"))
+            print("\n")
+            file = open(os.path.join(directories[4], f"{content['name']}.txt"), 'w')
         else:
             information += f"Artwork URL: {content['album']['images'][0]['url']}\n\n"
             information += f"Preview URL: {content['preview_url']}\n\n"
+            print(f"Downloading Artwork for {content['name']}")
+            wget.download(content['album']['images'][0]['url'], os.path.join(directories[7], f"{content['name']}_Track.png"))
+            print("\n")
             print(f"Downloading Track Preview for {content['name']}")
-            wget.download(content['preview_url'], os.path.join(directories[5], f"{content['name']}_Preview.mp3"))
-            print("")
+            wget.download(content['preview_url'], os.path.join(directories[8], f"{content['name']}_Preview.mp3"))
+            print("\n")
+            file = open(os.path.join(directories[5], f"{content['name']}.txt"), 'w')
 
-        information += f"Content URI: {content['uri']}\n\n"
         file.write(information)
         file.close()
-        print("Finished downloading the requested contents!\n")
+        print("Finished downloading the requested contents!")
     except Exception as e:
         print(f"There was an error trying to write the requested contents\nError: {e}")
         input("\nPress any key to quit")
@@ -104,7 +111,7 @@ def writeAndDownloadSongContents(content, isAlbum):
 
 # A method to read the users input for the URL and format it
 def checkInput(choice):
-    url = input(f"Enter URL of {choice} here: ")
+    url = input(f"Enter in the URL of the {choice} here: ")
     try:
         beginIndex = url.rfind('/') + 1
         endIndex = url.index("?si")
@@ -121,6 +128,13 @@ def checkInput(choice):
     return url
 
 
+
+def removeCache():
+    if os.path.exists(directories[1]):
+        os.remove(directories[1])
+
+
+
 def main():
     # Display prompt to the user and read the choice they make
     global choice  # Make a global variable to track what the user inputs so if they type "quit", the program quits
@@ -135,12 +149,12 @@ def main():
             track = sp.track(url)
         except Exception as e:
             print(f"There was an error trying to get the track information\nError: {e}")
-            if os.path.exists(directories[1]):
-                os.remove(directories[1])
+            removeCache()
             input("\nPress any key to quit")
             quit()
     
         writeAndDownloadSongContents(track, False)
+        print(f"\nFinished writing all the {choice}'s information")
     elif choice == "album":
         url = checkInput(choice)
 
@@ -148,14 +162,12 @@ def main():
             album = sp.album(url)
         except Exception as e:
             print(f"There was an error trying to get the track information\nError: {e}")
-            if os.path.exists(directories[1]):
-                os.remove(directories[1])
+            removeCache()
             input("\nPress any key to quit")
             quit()
     
         writeAndDownloadSongContents(album, True)
-
-        print(f"\nFinished writing all the album's information")
+        print(f"\nFinished writing all the {choice}'s information")
     elif choice == "artist":
         url = checkInput(choice)
     
@@ -163,14 +175,12 @@ def main():
             artist = sp.artist(url)
         except Exception as e:
             print(f"There was an error trying to get the artist information\nError: {e}")
-            if os.path.exists(directories[1]):
-                os.remove(directories[1])
+            removeCache()
             input("\nPress any key to quit")
             quit()
 
         writeProfileContents(artist, True)
-    
-        print(f"\nFinished writing all the artist's information")
+        print(f"\nFinished writing all the {choice}'s information")
     elif choice == "user":
         url = checkInput(choice)
 
@@ -178,14 +188,15 @@ def main():
             user = sp.user(url)
         except Exception as e:
             print(f"There was an error trying to get the user profile information\nError: {e}")
-            if os.path.exists(directories[1]):
-                os.remove(directories[1])
+            removeCache()
             input("\nPress any key to quit")
             quit()
 
         writeProfileContents(user, False)
-
-        print(f"\nFinished writing all the user's information")
+        print(f"\nFinished writing all the {choice}'s information")
+    elif choice == "quit":
+        print("\nQuitting program now")
+        quit()
     else:
         print("\nPlease enter a valid selection to continue!")
 
