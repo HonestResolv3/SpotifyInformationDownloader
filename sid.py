@@ -6,8 +6,11 @@ import spotipy
 from spotipy.oauth2 import SpotifyPKCE 
 import spotipy.util
 
+# Used for downloading content through Python (Do not use a VPN!)
+import wget
+
 # Temporary import for debug purposes
-import pprint;
+import pprint
 
 
 
@@ -18,8 +21,11 @@ artistPath = os.path.join(exportPath, "Artists")
 userPath = os.path.join(exportPath, "Users")
 albumPath = os.path.join(exportPath, "Albums")
 trackPath = os.path.join(exportPath, "Tracks")
+mediaPath = os.path.join(exportPath, "Media")
+mediaPreviewPath = os.path.join(exportPath, "Media", "Song Previews")
+mediaPicturePath = os.path.join(exportPath, "Media", "Pictures")
 cachePath = os.path.join(dirPath, ".cache")
-sp = spotipy.Spotify(auth_manager=SpotifyPKCE(client_id="72f54fa540c743268595191fc3a153d0", redirect_uri="https://webpages.uncc.edu/hquresh1/SpotifyInfoRedirect/callback/"))
+sp = spotipy.Spotify(auth_manager=SpotifyPKCE(client_id="72f54fa540c743268595191fc3a153d0", redirect_uri="http://localhost:5000/callback"))
 choice = ""
 
 
@@ -52,7 +58,7 @@ def writeProfileContents(account, isArtist):
 
 
 # A method to write track and album information depending on what is passed in
-def writeSongContents(content, isAlbum):
+def writeAndDownloadSongContents(content, isAlbum):
     try:
         if not isAlbum:
             file = open(os.path.join(trackPath, f"{content['name']}.txt"), 'w')
@@ -95,6 +101,10 @@ def writeSongContents(content, isAlbum):
 
         file.write(f"Available Markets (ISO 3166-1 alpha-2 Code): {content['available_markets']}\n\n")
         file.close()
+
+        if not isAlbum:
+            print(f"Downloading Track Preview for {content['name']}")
+            file = wget.download(content['preview_url'], os.path.join(trackPath, f"{content['name']}_Preview.mp3"))
     except Exception as e:
         print(f"There was an error trying to write the requested contents\nError: {e}")
         input("\nPress any key to quit")
@@ -141,7 +151,7 @@ def main():
             quit()
     
         # pprint.pprint(track) - Debug purposes
-        writeSongContents(track, False)
+        writeAndDownloadSongContents(track, False)
     elif choice == "album":
         url = checkInput(choice)
 
@@ -155,7 +165,7 @@ def main():
             quit()
     
         # pprint.pprint(album) - Debug purposes
-        writeSongContents(album, True)
+        writeAndDownloadSongContents(album, True)
 
         print(f"\nFinished writing all the album's information")
     elif choice == "artist":
@@ -211,6 +221,12 @@ try:
         os.mkdir(albumPath)
     if not os.path.exists(trackPath):
         os.mkdir(trackPath)
+    if not os.path.exists(mediaPath):
+        os.mkdir(mediaPath)
+    if not os.path.exists(mediaPreviewPath):
+        os.mkdir(mediaPreviewPath)
+    if not os.path.exists(mediaPicturePath):
+        os.mkdir(mediaPicturePath)
 except Exception as e:
     print(f"There was an error trying to create the \"Exports\" folder\nError: {e}")
     c = input("\nPress any key to quit")
