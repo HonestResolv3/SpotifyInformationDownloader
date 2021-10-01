@@ -1,4 +1,5 @@
 # Imports used for file locations, Spotify communication and file downloads
+import codecs
 import os
 import spotipy
 from spotipy.oauth2 import SpotifyPKCE 
@@ -28,7 +29,7 @@ def writeProfileContents(account, isArtist):
         # Versus users that just have 'display_name'
         if isArtist:
             print(f"Writing contents for {account['name']}\n")
-            file = open(os.path.join(directories[2], f"{account['name']}.txt"), 'w')
+            file = codecs.open(os.path.join(directories[2], f"{account['name']}.txt"), 'w', 'utf-8')
             information += f"Name: {account['name']}\n\n"
             information += f"Popularity: {account['popularity']}\n\n"
             print(f"Downloading Profile Picture URL")
@@ -36,7 +37,7 @@ def writeProfileContents(account, isArtist):
             print("\n")
         else:
             print(f"Writing contents for {account['display_name']}\n")
-            file = open(os.path.join(directories[3], f"{account['display_name']}.txt"), 'w')
+            file = codecs.open(os.path.join(directories[3], f"{account['display_name']}.txt"), 'w', 'utf-8')
             information += f"Display Name: {account['display_name']}\n\n"
             print(f"Downloading Profile Picture URL")
             wget.download(account['images'][0]['url'], os.path.join(directories[7], f"{account['display_name']}_User__Avatar.png"))
@@ -87,7 +88,7 @@ def writeAndDownloadSongContents(content, isAlbum):
             print(f"Downloading Artwork for {content['name']}")
             wget.download(content['images'][0]['url'], os.path.join(directories[7], f"{content['name']}_Album.png"))
             print("\n")
-            file = open(os.path.join(directories[4], f"{content['name']}.txt"), 'w')
+            file = codecs.open(os.path.join(directories[4], f"{content['name']}.txt"), 'w', 'utf-8')
         else:
             information += f"Artwork URL: {content['album']['images'][0]['url']}\n\n"
             information += f"Preview URL: {content['preview_url']}\n\n"
@@ -97,8 +98,9 @@ def writeAndDownloadSongContents(content, isAlbum):
             print(f"Downloading Track Preview for {content['name']}")
             wget.download(content['preview_url'], os.path.join(directories[8], f"{content['name']}_Preview.mp3"))
             print("\n")
-            file = open(os.path.join(directories[5], f"{content['name']}.txt"), 'w')
+            file = codecs.open(os.path.join(directories[5], f"{content['name']}.txt"), 'w', 'utf-8')
 
+        information += f"Content Availability (ISO Alpha-2 3166 Format): {content['available_markets']}\n\n"
         file.write(information)
         file.close()
         print("Finished downloading the requested contents!")
@@ -138,13 +140,12 @@ def removeCache():
 def main():
     # Display prompt to the user and read the choice they make
     global choice  # Make a global variable to track what the user inputs so if they type "quit", the program quits
-    choice = input("\nWhat would you like to get information for?\nYour options are: \"track\", \"album\", \"artist\", \"user\"\n\nYour Input: ")
+    choice = input("\nWhat would you like to get information for?\nYour options are: \"track\", \"album\", \"artist\", \"user\", and \"quit\"\n\nYour Input: ")
     choice = choice.lower()
 
     # Depending on what the user wants, the program will perform the task
     if choice == "track":
         url = checkInput(choice)
-
         try:
             track = sp.track(url)
         except Exception as e:
@@ -154,10 +155,10 @@ def main():
             quit()
     
         writeAndDownloadSongContents(track, False)
+        # pprint.pprint(track)
         print(f"\nFinished writing all the {choice}'s information")
     elif choice == "album":
         url = checkInput(choice)
-
         try:
             album = sp.album(url)
         except Exception as e:
@@ -167,10 +168,10 @@ def main():
             quit()
     
         writeAndDownloadSongContents(album, True)
+        # pprint.pprint(album)
         print(f"\nFinished writing all the {choice}'s information")
     elif choice == "artist":
         url = checkInput(choice)
-    
         try:
             artist = sp.artist(url)
         except Exception as e:
@@ -183,7 +184,6 @@ def main():
         print(f"\nFinished writing all the {choice}'s information")
     elif choice == "user":
         url = checkInput(choice)
-
         try:
             user = sp.user(url)
         except Exception as e:
@@ -219,5 +219,5 @@ except Exception as e:
     quit()
 
 print("Login to your Spotify profile when using this application. (Spotify's API does not allow un-authorized requests)")
-while not choice.lower() == "quit":
+while True:
     main()
